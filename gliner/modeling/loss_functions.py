@@ -2,6 +2,44 @@ import torch
 import torch.nn.functional as F
 
 
+def span_model_custom_loss(outputs, labels, num_items_in_batch):
+    scores = outputs["scores"]
+    prompts_embedding_mask = outputs["prompts_embedding_mask"]
+    mask_label = outputs["span_mask"]
+
+    reduction = 'sum'
+    alpha = -1
+    gamma = 0.0
+    label_smoothing = 0.0
+
+    batch_size = scores.shape[0]
+    num_classes = prompts_embedding_mask.shape[-1]
+
+    scores = scores.view(-1, num_classes)
+    labels = labels.view(-1, num_classes)
+
+    all_losses = focal_loss_with_logits(scores, labels,
+                                        alpha=alpha,
+                                        gamma=gamma,
+                                        label_smoothing=label_smoothing)
+
+    masked_loss = all_losses.view(batch_size, -1, num_classes) * prompts_embedding_mask.unsqueeze(1)
+    all_losses = masked_loss.view(-1, num_classes)
+
+    mask_label = mask_label.view(-1, 1)
+
+    all_losses = all_losses * mask_label.float()
+
+    if reduction == "mean":
+        loss = all_losses.mean()
+    elif reduction == 'sum':
+        loss = all_losses.sum()
+    else:
+        loss = all_losses.sum()
+
+    return loss
+
+
 def focal_loss_with_logits(
         inputs: torch.Tensor,
         targets: torch.Tensor,
@@ -37,7 +75,7 @@ def focal_loss_with_logits(
     """
     # Create a mask to ignore specified index
     valid_mask = targets != ignore_index
-    
+
     # Apply label smoothing if needed
     if label_smoothing != 0:
         with torch.no_grad():

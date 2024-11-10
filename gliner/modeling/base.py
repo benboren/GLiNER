@@ -241,19 +241,25 @@ class SpanModel(BaseModel):
 
         scores = torch.einsum("BLKD,BCD->BLKC", span_rep, prompts_embedding)
 
-        loss = None
-        if labels is not None:
-            loss = self.loss(scores, labels, prompts_embedding_mask, span_mask, **kwargs)
+        return {
+            "scores": scores,
+            "prompts_embedding_mask": prompts_embedding_mask,
+            "span_mask": span_mask,
+        }
 
-        output = GLiNERModelOutput(
-            logits=scores,
-            loss=loss,
-            prompts_embedding=prompts_embedding,
-            prompts_embedding_mask=prompts_embedding_mask,
-            words_embedding=words_embedding,
-            mask=mask,
-        )
-        return output
+        # loss = None
+        # if labels is not None:
+        #     loss = self.loss(scores, labels, prompts_embedding_mask, span_mask, **kwargs)
+        #
+        # output = GLiNERModelOutput(
+        #     logits=scores,
+        #     loss=loss,
+        #     prompts_embedding=prompts_embedding,
+        #     prompts_embedding_mask=prompts_embedding_mask,
+        #     words_embedding=words_embedding,
+        #     mask=mask,
+        # )
+        # return output
     
     def loss(self, scores, labels, prompts_embedding_mask, mask_label,
                         alpha: float = -1., gamma: float = 0.0, label_smoothing: float = 0.0, 

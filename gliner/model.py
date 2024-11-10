@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from huggingface_hub import PyTorchModelHubMixin, snapshot_download
 from torch import nn
 from transformers import AutoConfig, AutoTokenizer
-from safetensors import safe_open
+# from safetensors import safe_open
 from safetensors.torch import save_file
 
 from .config import GLiNERConfig
@@ -803,13 +803,13 @@ class GLiNER(nn.Module, PyTorchModelHubMixin):
                 config.class_token_index == -1 or config.vocab_size == -1
             ) and resize_token_embeddings and not config.labels_encoder:
                 gliner.resize_token_embeddings(add_tokens=add_tokens)
-            if model_file.endswith("safetensors"):
-                state_dict = {}
-                with safe_open(model_file, framework="pt", device=map_location) as f:
-                    for key in f.keys():
-                        state_dict[key] = f.get_tensor(key)
-            else:
-                state_dict = torch.load(model_file, map_location=torch.device(map_location), weights_only=True)
+            # if model_file.endswith("safetensors"):
+            #     state_dict = {}
+            #     with safe_open(model_file, framework="pt", device=map_location) as f:
+            #         for key in f.keys():
+            #             state_dict[key] = f.get_tensor(key)
+            # else:
+            state_dict = torch.load(model_file, map_location=torch.device(map_location), weights_only=True)
             gliner.model.load_state_dict(state_dict, strict=strict)
             gliner.model.to(map_location)
             if compile_torch_model and "cuda" in map_location:
